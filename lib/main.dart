@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'core/constants/app_colors.dart';
 import 'core/network/dio_client.dart';
 import 'core/providers/connectivity_provider.dart';
@@ -19,23 +20,34 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Init Firebase
-  await Firebase.initializeApp();
+  // 1. Init Firebase (with error catching for unconfigured web environment)
+  bool isFirebaseInit = false;
+  if (!kIsWeb) {
+    try {
+      await Firebase.initializeApp();
+      isFirebaseInit = true;
+      // 2. Register FCM background handler (sebelum runApp!)
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      debugPrint('Firebase init error: $e');
+    }
+  }
 
-  // 2. Register FCM background handler (sebelum runApp!)
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // 3. Init local notifications channel (Android)
-  await FcmService().initLocalNotifications();
+  if (!kIsWeb) {
+    await FcmService().initLocalNotifications();
+  }
 
   // 4. Touch DioClient singleton
   DioClient.instance;
 
-  runApp(const ProviderScope(child: AgriMartApp()));
+  runApp(ProviderScope(child: AgriMartApp(isFirebaseInit: isFirebaseInit)));
 }
 
 class AgriMartApp extends ConsumerStatefulWidget {
-  const AgriMartApp({super.key});
+  final bool isFirebaseInit;
+  const AgriMartApp({super.key, this.isFirebaseInit = true});
 
   @override
   ConsumerState<AgriMartApp> createState() => _AgriMartAppState();
@@ -45,28 +57,32 @@ class _AgriMartAppState extends ConsumerState<AgriMartApp> {
   @override
   void initState() {
     super.initState();
-
-    // Listen auth state changes untuk init FCM setelah login
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.listen(authProvider, (previous, next) {
-        final val = next.value;
-        if (val is Authenticated) {
-          _initFCM();
-        }
-      });
-    });
   }
 
   Future<void> _initFCM() async {
-    final fcm = FcmService();
-    await fcm.requestPermission();
-    await fcm.getToken();
-    fcm.setupForegroundHandler();
-    fcm.setupOnMessageOpenedApp();
+    if (!widget.isFirebaseInit) return;
+    
+    try {
+      final fcm = FcmService();
+      await fcm.requestPermission();
+      await fcm.getToken();
+      fcm.setupForegroundHandler();
+      fcm.setupOnMessageOpenedApp();
+    } catch (e) {
+      debugPrint('FCM setup failed: \$e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Listen auth state changes untuk init FCM setelah login
+    ref.listen(authProvider, (previous, next) {
+      final val = next.value;
+      if (val is Authenticated) {
+        _initFCM();
+      }
+    });
+
     final router = ref.watch(appRouterProvider);
     final isOnline = ref.watch(connectivityProvider);
 

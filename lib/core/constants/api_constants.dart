@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class ApiConstants {
   // baseUrl: get from env, or hardcoded for dev
   static String get baseUrl {
-    if (Platform.isAndroid) {
+    if (kIsWeb) {
+      return 'http://localhost:5000/api';
+    } else if (Platform.isAndroid) {
       return 'http://10.0.2.2:5000/api'; // Using 5000 based on backend running on 5000
     } else {
       return 'http://localhost:5000/api';
