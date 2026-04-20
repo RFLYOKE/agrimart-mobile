@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../auth/domain/providers/auth_provider.dart';
-import '../data/models/cart_item_model.dart';
-import '../data/models/product_model.dart';
+import '../../../auth/domain/providers/auth_provider.dart';
+import '../../data/models/cart_item_model.dart';
+import '../../data/models/product_model.dart';
 
 class CartNotifier extends StateNotifier<List<CartItemModel>> {
   final Ref ref;

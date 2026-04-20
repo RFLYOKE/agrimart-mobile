@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/dio_provider.dart';
-import '../data/repositories/product_repository.dart';
-import '../models/product_model.dart';
+import '../../data/repositories/product_repository.dart';
+import '../../data/models/product_model.dart';
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
   return ProductRepository(ref.watch(dioProvider));

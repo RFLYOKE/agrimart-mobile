@@ -4,8 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../../../../core/network/dio_client.dart';
-import '../models/user_model.dart';
-import '../repositories/auth_repository.dart';
+import '../../data/models/user_model.dart';
+import '../../data/repositories/auth_repository.dart';
 
 sealed class AuthState {}
 class Unauthenticated extends AuthState {}

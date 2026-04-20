@@ -1,41 +1,74 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'core/router/app_router.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_colors.dart';
 import 'core/network/dio_client.dart';
+import 'core/providers/connectivity_provider.dart';
+import 'core/router/app_router.dart';
+import 'core/services/fcm_service.dart';
+import 'features/auth/domain/providers/auth_provider.dart';
 
+// ─── FCM Background handler (top-level, wajib di luar class) ──────────────────
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  // Handle background notification
-  debugPrint('Handling a background message: ${message.messageId}');
+  debugPrint('BG message: ${message.messageId}');
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase (Assuming you will run flutterfire configure later)
-  try {
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  } catch (e) {
-    debugPrint('Firebase init failed (usually missing config): $e');
-  }
 
-  // Touch the singleton so it instantiates
-  final _ = DioClient.instance;
+  // 1. Init Firebase
+  await Firebase.initializeApp();
+
+  // 2. Register FCM background handler (sebelum runApp!)
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // 3. Init local notifications channel (Android)
+  await FcmService().initLocalNotifications();
+
+  // 4. Touch DioClient singleton
+  DioClient.instance;
 
   runApp(const ProviderScope(child: AgriMartApp()));
 }
 
-class AgriMartApp extends ConsumerWidget {
+class AgriMartApp extends ConsumerStatefulWidget {
   const AgriMartApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AgriMartApp> createState() => _AgriMartAppState();
+}
+
+class _AgriMartAppState extends ConsumerState<AgriMartApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen auth state changes untuk init FCM setelah login
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listen(authProvider, (previous, next) {
+        final val = next.value;
+        if (val is Authenticated) {
+          _initFCM();
+        }
+      });
+    });
+  }
+
+  Future<void> _initFCM() async {
+    final fcm = FcmService();
+    await fcm.requestPermission();
+    await fcm.getToken();
+    fcm.setupForegroundHandler();
+    fcm.setupOnMessageOpenedApp();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
+    final isOnline = ref.watch(connectivityProvider);
 
     return MaterialApp.router(
       title: 'AgriMart',
@@ -47,15 +80,12 @@ class AgriMartApp extends ConsumerWidget {
           secondary: AppColors.secondaryGreen,
         ),
         useMaterial3: true,
-        // Global styling for elevated buttons
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryGreen,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          )
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -65,8 +95,49 @@ class AgriMartApp extends ConsumerWidget {
           ),
         ),
       ),
-      // Set to ID
       locale: const Locale('id', 'ID'),
+      builder: (context, child) {
+        return _ConnectivityWrapper(isOnline: isOnline, child: child ?? const SizedBox());
+      },
+    );
+  }
+}
+
+/// Wrapper yang menampilkan banner offline di atas seluruh app
+class _ConnectivityWrapper extends StatelessWidget {
+  final bool isOnline;
+  final Widget child;
+
+  const _ConnectivityWrapper({required this.isOnline, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Offline Banner
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: isOnline ? 0 : 38,
+          color: AppColors.errorRed,
+          child: isOnline
+              ? const SizedBox()
+              : const SafeArea(
+                  bottom: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'Tidak ada koneksi internet',
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+        Expanded(child: child),
+      ],
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/models/consultant_model.dart';
+import '../../data/models/consultant_model.dart';
 
 // Mock list or API interaction to fetch consultants
 class ConsultantNotifier extends AsyncNotifier<List<ConsultantModel>> {

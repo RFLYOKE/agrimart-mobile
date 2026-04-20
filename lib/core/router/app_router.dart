@@ -1,24 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import 'route_names.dart';
 import '../../features/auth/domain/providers/auth_provider.dart';
 import '../../features/auth/data/models/user_model.dart';
+
+// Auth Screens
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/otp_verification_screen.dart';
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+// Marketplace Screens
+import '../../features/marketplace/presentation/screens/product_list_screen.dart';
+import '../../features/marketplace/presentation/screens/product_detail_screen.dart';
+import '../../features/marketplace/presentation/screens/cart_screen.dart';
+import '../../features/marketplace/presentation/screens/checkout_screen.dart';
 
-  String _getDashboardForRole(String role) {
-    switch (role) {
-      case 'koperasi': return RouteNames.koperasiDashboard;
-      case 'hotel_restoran': return RouteNames.hotelDashboard;
-      case 'eksportir': return RouteNames.exporterDashboard;
-      case 'admin': return RouteNames.adminDashboard;
-      case 'konsumen':
-      default: return RouteNames.home;
+// Consult Screens
+import '../../features/consult/presentation/screens/consultant_list_screen.dart';
+
+// Auction Screens
+import '../../features/auction/presentation/screens/auction_list_screen.dart';
+
+// Analytics Screens
+import '../../features/analytics/presentation/screens/price_home_screen.dart';
+import '../../features/analytics/presentation/screens/price_alert_list_screen.dart';
+
+// Dashboard Screens (placeholder shells)
+import '../widgets/konsumen_shell.dart';
+
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final authAsyncState = ref.watch(authProvider);
+
+  String _getDashboardForUser(UserModel user) {
+    switch (user.role) {
+      case UserRole.koperasi:      return RouteNames.koperasiDashboard;
+      case UserRole.hotelRestoran: return RouteNames.hotelDashboard;
+      case UserRole.eksportir:     return RouteNames.exporterDashboard;
+      case UserRole.admin:         return RouteNames.adminDashboard;
+      case UserRole.konsumen:
+      default:                     return RouteNames.home;
     }
   }
 
@@ -32,60 +54,50 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ].contains(path);
   }
 
-  bool _isRouteAllowedForRole(String path, String role) {
-    if (path.startsWith('/admin') && role != 'admin') return false;
-    if (path.startsWith('/hotel') && role != 'hotel_restoran') return false;
-    if (path.startsWith('/koperasi') && role != 'koperasi') return false;
-    if (path.startsWith('/exporter') && role != 'eksportir') return false;
-    return true; // shared or correctly namespaced routes
+  bool _isRoleAllowed(String path, UserRole role) {
+    if (path.startsWith('/admin') && role != UserRole.admin) return false;
+    if (path.startsWith('/hotel') && role != UserRole.hotelRestoran) return false;
+    if (path.startsWith('/koperasi') && role != UserRole.koperasi) return false;
+    if (path.startsWith('/exporter') && role != UserRole.eksportir) return false;
+    return true;
   }
 
   return GoRouter(
     initialLocation: RouteNames.splash,
     redirect: (context, state) {
-      final isAuth = authState.value is Authenticated;
-      final isUnauth = authState.value is Unauthenticated;
+      final value = authAsyncState.value;
+      final isAuth = value is Authenticated;
+      final isUnauth = value is Unauthenticated;
       final path = state.matchedLocation;
 
-      // 1. Jika loading, tunggu dulu
+      // Still loading
       if (!isAuth && !isUnauth) return null;
 
-      // 2. Jika belum login dan coba akses private route -> login
-      if (isUnauth && !_isPublicRoute(path)) {
-        return RouteNames.login;
-      }
+      // Not logged in -> block private routes
+      if (isUnauth && !_isPublicRoute(path)) return RouteNames.login;
 
-      // 3 & 4. Jika sudah login
       if (isAuth) {
-        final user = (authState.value as Authenticated).user;
-        final roleStr = user.toJson()['role'];
+        final user = (value as Authenticated).user;
 
-        // Jika akses public route padahal sudah login -> arahkan ke dashboard
-        if (_isPublicRoute(path)) {
-          return _getDashboardForRole(roleStr);
-        }
+        // Already logged in -> skip auth screens
+        if (_isPublicRoute(path)) return _getDashboardForUser(user);
 
-        // Jika akses route role lain -> arahkan ke dashboard sendiri
-        if (!_isRouteAllowedForRole(path, roleStr)) {
-          return _getDashboardForRole(roleStr);
-        }
+        // Wrong role for route
+        if (!_isRoleAllowed(path, user.role)) return _getDashboardForUser(user);
       }
 
-      return null; // no redirect needed
+      return null;
     },
     routes: [
+      // ─── Splash ───────────────────────────────────────────
       GoRoute(
         path: RouteNames.splash,
-        builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (_, __) => const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
-      GoRoute(
-        path: RouteNames.login,
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.register,
-        builder: (context, state) => const RegisterScreen(),
-      ),
+
+      // ─── Auth ─────────────────────────────────────────────
+      GoRoute(path: RouteNames.login,    builder: (_, __) => const LoginScreen()),
+      GoRoute(path: RouteNames.register, builder: (_, __) => const RegisterScreen()),
       GoRoute(
         path: RouteNames.verifyOtp,
         builder: (context, state) {
@@ -95,28 +107,51 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Konsumen routes (Mock ShellRoute)
+      // ─── Konsumen Shell (Bottom Nav) ───────────────────────
       ShellRoute(
-        builder: (context, state, child) => Scaffold(
-          body: child,
-          bottomNavigationBar: BottomNavigationBar(
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-              BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Konsultasi'),
-            ]
-          ),
-        ),
+        builder: (context, state, child) => KonsumenShell(child: child),
         routes: [
-          GoRoute(path: RouteNames.home, builder: (context, state) => Scaffold(appBar: AppBar(title: const Text('Home')))),
-          GoRoute(path: RouteNames.consult, builder: (context, state) => const Scaffold(body: Center(child: Text('Consult')))),
-        ]
+          GoRoute(
+            path: RouteNames.home,
+            builder: (_, __) => const ProductListScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.consult,
+            builder: (_, __) => const ConsultantListScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.auction,
+            builder: (_, __) => const AuctionListScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.analytics,
+            builder: (_, __) => const PriceHomeScreen(),
+          ),
+        ],
       ),
 
-      // Add actual mock routes for the rest of dashboards to prevent GoRouter crashes on undefined
-      GoRoute(path: RouteNames.koperasiDashboard, builder: (context, state) => Scaffold(appBar: AppBar(title: const Text('Koperasi Dashboard')))),
-      GoRoute(path: RouteNames.hotelDashboard, builder: (context, state) => Scaffold(appBar: AppBar(title: const Text('Hotel Dashboard')))),
-      GoRoute(path: RouteNames.exporterDashboard, builder: (context, state) => Scaffold(appBar: AppBar(title: const Text('Exporter Dashboard')))),
-      GoRoute(path: RouteNames.adminDashboard, builder: (context, state) => Scaffold(appBar: AppBar(title: const Text('Admin Dashboard')))),
+      // ─── Marketplace Detail Routes ─────────────────────────
+      GoRoute(
+        path: '/products/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ProductDetailScreen(productId: id);
+        },
+      ),
+      GoRoute(path: RouteNames.cart,     builder: (_, __) => const CartScreen()),
+      GoRoute(path: RouteNames.checkout, builder: (_, __) => const CheckoutScreen()),
+
+      // ─── Analytics ────────────────────────────────────────
+      GoRoute(
+        path: '/analytics/alerts',
+        builder: (_, __) => const PriceAlertListScreen(),
+      ),
+
+      // ─── Role Dashboards (placeholder Scaffolds) ──────────
+      GoRoute(path: RouteNames.koperasiDashboard, builder: (_, __) => Scaffold(appBar: AppBar(title: const Text('Dashboard Koperasi')))),
+      GoRoute(path: RouteNames.hotelDashboard,    builder: (_, __) => Scaffold(appBar: AppBar(title: const Text('Dashboard Hotel')))),
+      GoRoute(path: RouteNames.exporterDashboard, builder: (_, __) => Scaffold(appBar: AppBar(title: const Text('Dashboard Eksportir')))),
+      GoRoute(path: RouteNames.adminDashboard,    builder: (_, __) => Scaffold(appBar: AppBar(title: const Text('Dashboard Admin')))),
     ],
   );
 });
