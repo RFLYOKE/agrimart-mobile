@@ -41,38 +41,50 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       state = AsyncValue.data(Unauthenticated());
     };
 
-    return await _checkAuth();
+    try {
+      return await _checkAuth();
+    } catch (e) {
+      print('Auth check error: $e');
+      return Unauthenticated();
+    }
   }
 
   Future<AuthState> _checkAuth() async {
-    final accessToken = await _secureStorage.read(key: 'access_token');
-    
-    if (accessToken != null && accessToken.isNotEmpty) {
-      if (JwtDecoder.isExpired(accessToken)) {
-        // Try refresh
-        final refreshToken = await _secureStorage.read(key: 'refresh_token');
-        if (refreshToken != null) {
-          try {
-            final res = await _repository.refreshToken(refreshToken);
-            await _secureStorage.write(key: 'access_token', value: res['data']['access_token']);
-            if (res['data']['refresh_token'] != null) {
-              await _secureStorage.write(key: 'refresh_token', value: res['data']['refresh_token']);
+    print("DEBUG: _checkAuth started");
+    try {
+      final accessToken = await _secureStorage.read(key: 'access_token');
+      print("DEBUG: _secureStorage.read completed, token: $accessToken");
+      
+      if (accessToken != null && accessToken.isNotEmpty) {
+        if (JwtDecoder.isExpired(accessToken)) {
+          // Try refresh
+          final refreshToken = await _secureStorage.read(key: 'refresh_token');
+          if (refreshToken != null) {
+            try {
+              final res = await _repository.refreshToken(refreshToken);
+              await _secureStorage.write(key: 'access_token', value: res['data']['access_token']);
+              if (res['data']['refresh_token'] != null) {
+                await _secureStorage.write(key: 'refresh_token', value: res['data']['refresh_token']);
+              }
+              final user = await _repository.getMe();
+              return Authenticated(user);
+            } catch (e) {
+              await _secureStorage.deleteAll();
+              return Unauthenticated();
             }
+          }
+        } else {
+          try {
             final user = await _repository.getMe();
             return Authenticated(user);
           } catch (e) {
-            await _secureStorage.deleteAll();
-            return Unauthenticated();
+             return Unauthenticated();
           }
         }
-      } else {
-        try {
-          final user = await _repository.getMe();
-          return Authenticated(user);
-        } catch (e) {
-           return Unauthenticated();
-        }
       }
+    } catch (e) {
+      print("DEBUG: _checkAuth caught error: $e");
+      return Unauthenticated();
     }
     return Unauthenticated();
   }

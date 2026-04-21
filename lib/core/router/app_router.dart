@@ -67,7 +67,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final value = authAsyncState.value;
       final isAuth = value is Authenticated;
-      final isUnauth = value is Unauthenticated;
+      final isUnauth = value is Unauthenticated || value is Error || authAsyncState.hasError;
       final path = state.matchedLocation;
 
       // Still loading

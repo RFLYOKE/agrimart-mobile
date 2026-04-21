@@ -1,16 +1,21 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
+
+// Conditional import: dart:io is NOT available on web
+import 'platform_stub.dart'
+    if (dart.library.io) 'dart:io';
 
 class ApiConstants {
   // baseUrl: get from env, or hardcoded for dev
   static String get baseUrl {
     if (kIsWeb) {
       return 'http://localhost:5000/api';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000/api'; // Using 5000 based on backend running on 5000
-    } else {
-      return 'http://localhost:5000/api';
     }
+    try {
+      if (Platform.isAndroid) {
+        return 'http://10.0.2.2:5000/api';
+      }
+    } catch (_) {}
+    return 'http://localhost:5000/api';
   }
 
   // Auth
