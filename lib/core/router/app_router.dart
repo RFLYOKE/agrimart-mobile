@@ -33,18 +33,17 @@ import '../widgets/konsumen_shell.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authAsyncState = ref.watch(authProvider);
 
-  String _getDashboardForUser(UserModel user) {
+  String getDashboardForUser(UserModel user) {
     switch (user.role) {
       case UserRole.koperasi:      return RouteNames.koperasiDashboard;
       case UserRole.hotelRestoran: return RouteNames.hotelDashboard;
       case UserRole.eksportir:     return RouteNames.exporterDashboard;
       case UserRole.admin:         return RouteNames.adminDashboard;
-      case UserRole.konsumen:
-      default:                     return RouteNames.home;
+      case UserRole.konsumen:      return RouteNames.home;
     }
   }
 
-  bool _isPublicRoute(String path) {
+  bool isPublicRoute(String path) {
     return [
       RouteNames.splash,
       RouteNames.login,
@@ -54,7 +53,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ].contains(path);
   }
 
-  bool _isRoleAllowed(String path, UserRole role) {
+  bool isRoleAllowed(String path, UserRole role) {
     if (path.startsWith('/admin') && role != UserRole.admin) return false;
     if (path.startsWith('/hotel') && role != UserRole.hotelRestoran) return false;
     if (path.startsWith('/koperasi') && role != UserRole.koperasi) return false;
@@ -74,16 +73,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (!isAuth && !isUnauth) return null;
 
       // Not logged in -> block private routes
-      if (isUnauth && !_isPublicRoute(path)) return RouteNames.login;
+      if (isUnauth && !isPublicRoute(path)) return RouteNames.login;
 
-      if (isAuth) {
-        final user = (value as Authenticated).user;
+      if (value is Authenticated) {
+        final user = value.user;
 
         // Already logged in -> skip auth screens
-        if (_isPublicRoute(path)) return _getDashboardForUser(user);
+        if (isPublicRoute(path)) return getDashboardForUser(user);
 
         // Wrong role for route
-        if (!_isRoleAllowed(path, user.role)) return _getDashboardForUser(user);
+        if (!isRoleAllowed(path, user.role)) return getDashboardForUser(user);
       }
 
       return null;

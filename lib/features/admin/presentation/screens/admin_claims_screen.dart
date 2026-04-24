@@ -1,97 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../domain/providers/admin_provider.dart';
 
 /// Admin Claims Screen — List semua klaim Fresh Guarantee
-class AdminClaimsScreen extends StatefulWidget {
+class AdminClaimsScreen extends ConsumerStatefulWidget {
   const AdminClaimsScreen({super.key});
 
   @override
-  State<AdminClaimsScreen> createState() => _AdminClaimsScreenState();
+  ConsumerState<AdminClaimsScreen> createState() => _AdminClaimsScreenState();
 }
 
-class _AdminClaimsScreenState extends State<AdminClaimsScreen> {
+class _AdminClaimsScreenState extends ConsumerState<AdminClaimsScreen> {
   String _selectedFilter = 'all';
-  bool _isLoading = true;
-  List<Map<String, dynamic>> _claims = [];
 
   final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-  @override
-  void initState() {
-    super.initState();
-    _loadClaims();
-  }
-
-  Future<void> _loadClaims() async {
-    setState(() => _isLoading = true);
-
-    // TODO: Replace with GET /admin/claims?status=...
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      _claims = [
-        {
-          'id': 'clm_1',
-          'buyerName': 'Budi Santoso',
-          'productName': 'Beras Premium 5kg',
-          'issueType': 'Produk Rusak',
-          'description': 'Kemasan sobek, beras terkontaminasi air.',
-          'photoUrls': ['https://example.com/photo1.jpg', 'https://example.com/photo2.jpg'],
-          'refundAmount': 75000,
-          'status': 'pending',
-          'createdAt': '2026-04-18T10:30:00Z',
-        },
-        {
-          'id': 'clm_2',
-          'buyerName': 'Siti Aminah',
-          'productName': 'Pupuk Organik 10L',
-          'issueType': 'Tidak Sesuai',
-          'description': 'Produk tidak sesuai deskripsi.',
-          'photoUrls': ['https://example.com/photo3.jpg'],
-          'refundAmount': 120000,
-          'status': 'approved',
-          'createdAt': '2026-04-15T14:00:00Z',
-        },
-        {
-          'id': 'clm_3',
-          'buyerName': 'Andi Wijaya',
-          'productName': 'Benih Jagung Hibrida',
-          'issueType': 'Kadaluarsa',
-          'description': 'Benih sudah lewat tanggal expired.',
-          'photoUrls': [],
-          'refundAmount': 50000,
-          'status': 'rejected',
-          'createdAt': '2026-04-10T08:00:00Z',
-        },
-      ];
-      _isLoading = false;
-    });
-  }
-
-  List<Map<String, dynamic>> get _filteredClaims {
-    if (_selectedFilter == 'all') return _claims;
-    return _claims.where((c) => c['status'] == _selectedFilter).toList();
-  }
-
-  void _handleApprove(String claimId) {
-    // TODO: PUT /admin/claims/:id/approve
-    setState(() {
-      final idx = _claims.indexWhere((c) => c['id'] == claimId);
-      if (idx != -1) _claims[idx]['status'] = 'approved';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('✅ Klaim disetujui'), backgroundColor: Color(0xFF22C55E)),
-    );
+  void _handleApprove(String claimId) async {
+    try {
+      await ref.read(adminActionsProvider).approveClaim(claimId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Klaim disetujui'), backgroundColor: Color(0xFF22C55E)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   void _handleReject(String claimId) {
-    // TODO: PUT /admin/claims/:id/reject
-    setState(() {
-      final idx = _claims.indexWhere((c) => c['id'] == claimId);
-      if (idx != -1) _claims[idx]['status'] = 'rejected';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('❌ Klaim ditolak'), backgroundColor: Color(0xFFEF4444)),
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Text('Tolak Klaim', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: reasonController,
+          maxLines: 3,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Alasan penolakan...',
+            hintStyle: TextStyle(color: Colors.grey[500]),
+            filled: true,
+            fillColor: const Color(0xFF0F172A),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Batal', style: TextStyle(color: Colors.grey[400])),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (reasonController.text.trim().isEmpty) return;
+              Navigator.pop(ctx);
+              
+              try {
+                await ref.read(adminActionsProvider).rejectClaim(claimId, reasonController.text.trim());
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('❌ Klaim ditolak'), backgroundColor: Color(0xFFEF4444)),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            child: const Text('Tolak', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -130,7 +121,7 @@ class _AdminClaimsScreenState extends State<AdminClaimsScreen> {
                   selected: active,
                   onSelected: (_) => setState(() => _selectedFilter = f['key']!),
                   backgroundColor: const Color(0xFF1E293B),
-                  selectedColor: const Color(0xFF22C55E).withOpacity(0.2),
+                  selectedColor: const Color(0xFF22C55E).withValues(alpha: 0.2),
                   labelStyle: TextStyle(
                     color: active ? const Color(0xFF22C55E) : Colors.grey[400],
                     fontWeight: active ? FontWeight.bold : FontWeight.normal,
@@ -144,27 +135,35 @@ class _AdminClaimsScreenState extends State<AdminClaimsScreen> {
 
           // Claims List
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E)))
-                : _filteredClaims.isEmpty
-                    ? Center(child: Text('Tidak ada klaim', style: TextStyle(color: Colors.grey[500])))
-                    : RefreshIndicator(
-                        onRefresh: _loadClaims,
-                        color: const Color(0xFF22C55E),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredClaims.length,
-                          itemBuilder: (_, i) {
-                            final claim = _filteredClaims[i];
-                            return _ClaimCard(
-                              claim: claim,
-                              currencyFormat: currencyFormat,
-                              onApprove: claim['status'] == 'pending' ? () => _handleApprove(claim['id']) : null,
-                              onReject: claim['status'] == 'pending' ? () => _handleReject(claim['id']) : null,
-                            );
-                          },
-                        ),
-                      ),
+            child: ref.watch(adminClaimsProvider({'status': _selectedFilter})).when(
+              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
+              error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+              data: (data) {
+                final claimsList = (data['claims'] as List).cast<Map<String, dynamic>>();
+
+                if (claimsList.isEmpty) {
+                  return Center(child: Text('Tidak ada klaim', style: TextStyle(color: Colors.grey[500])));
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () => ref.refresh(adminClaimsProvider({'status': _selectedFilter}).future),
+                  color: const Color(0xFF22C55E),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: claimsList.length,
+                    itemBuilder: (_, i) {
+                      final claim = claimsList[i];
+                      return _ClaimCard(
+                        claim: claim,
+                        currencyFormat: currencyFormat,
+                        onApprove: claim['status'] == 'pending' ? () => _handleApprove(claim['id']) : null,
+                        onReject: claim['status'] == 'pending' ? () => _handleReject(claim['id']) : null,
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -219,16 +218,16 @@ class _ClaimCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(claim['buyerName'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text(claim['buyer']?['name'] ?? 'Pembeli', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                     const SizedBox(height: 2),
-                    Text(claim['productName'], style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                    Text(claim['order']?['items']?[0]?['productName'] ?? 'Produk', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
                   ],
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.15),
+                  color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
@@ -242,7 +241,7 @@ class _ClaimCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withOpacity(0.1),
+              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(claim['issueType'], style: const TextStyle(color: Color(0xFFF87171), fontSize: 12, fontWeight: FontWeight.w600)),
@@ -265,9 +264,12 @@ class _ClaimCard extends StatelessWidget {
                     width: 60,
                     height: 60,
                     color: const Color(0xFF334155),
-                    child: const Icon(Icons.image, color: Colors.grey, size: 24),
-                    // TODO: Replace with CachedNetworkImage(imageUrl: photos[idx])
-                  ),
+                    child: CachedNetworkImage(
+                      imageUrl: photos[idx],
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
                 ),
               ),
             ),

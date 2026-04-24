@@ -9,7 +9,7 @@ import '../../../../features/auth/domain/providers/auth_provider.dart';
 import '../../domain/providers/product_provider.dart';
 import '../../domain/providers/cart_provider.dart';
 import '../../data/models/product_model.dart';
-import '../../data/repositories/product_repository.dart';
+// import '../../data/repositories/product_repository.dart';
 
 // Use a FutureProvider to fetch a single product if it's not in the list
 final productDetailProvider = FutureProvider.family<ProductModel, String>((ref, id) async {

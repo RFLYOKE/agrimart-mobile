@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../../core/constants/api_constants.dart';
 import '../models/message_model.dart';
 import 'package:flutter/foundation.dart';
@@ -9,7 +9,7 @@ class ConsultSocketService {
   factory ConsultSocketService() => _instance;
   ConsultSocketService._internal();
 
-  IO.Socket? _socket;
+  io.Socket? _socket;
   final _messageController = StreamController<MessageModel>.broadcast();
   final _typingController = StreamController<Map<String, dynamic>>.broadcast();
   
@@ -23,7 +23,7 @@ class ConsultSocketService {
     // Ex. 'http://10.0.2.2:5000/api' -> 'http://10.0.2.2:5000/consult'
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
     
-    _socket = IO.io('$baseUrl/consult', <String, dynamic>{
+    _socket = io.io('$baseUrl/consult', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'auth': {'token': token},

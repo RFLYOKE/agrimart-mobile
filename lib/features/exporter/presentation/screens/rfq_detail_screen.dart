@@ -88,7 +88,7 @@ class RfqDetailScreen extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                         child: const Text('OPEN', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
                       ),
                       const Spacer(),
@@ -128,7 +128,7 @@ class RfqDetailScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+                      border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

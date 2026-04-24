@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../domain/providers/auth_provider.dart';
+// import '../../domain/providers/auth_provider.dart';
 import '../../data/models/user_model.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {

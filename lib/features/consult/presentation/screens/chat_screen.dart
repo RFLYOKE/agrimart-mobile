@@ -1,4 +1,4 @@
-import 'dart:io';
+// import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -65,6 +65,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      if (!mounted) return;
       // Logic for uploading image and sending image message URL goes here
       // Normally upload to S3 first, then get URL and send as type 'image'
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mengunggah gambar...')));

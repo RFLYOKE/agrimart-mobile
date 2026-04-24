@@ -86,10 +86,10 @@ class _ExporterDashboardScreenState extends State<ExporterDashboardScreen> {
                         // --- Urgency Docs Warning ---
                         if (_stats['dokumenWarning']! > 0)
                           Container(
-                            margin: const EdgeInsets.bottom(24),
+                            margin: const EdgeInsets.only(bottom: 24),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444).withOpacity(0.1),
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: const Color(0xFFEF4444)),
                             ),
@@ -177,7 +177,7 @@ class _ExporterDashboardScreenState extends State<ExporterDashboardScreen> {
                                     Expanded(child: Text(rfq['title'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                                      decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                                       child: const Text('OPEN', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
                                     ),
                                   ],

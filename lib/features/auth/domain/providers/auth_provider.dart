@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../../../../core/network/dio_client.dart';
@@ -44,16 +45,16 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     try {
       return await _checkAuth();
     } catch (e) {
-      print('Auth check error: $e');
+      debugPrint('Auth check error: $e');
       return Unauthenticated();
     }
   }
 
   Future<AuthState> _checkAuth() async {
-    print("DEBUG: _checkAuth started");
+    debugPrint("DEBUG: _checkAuth started");
     try {
       final accessToken = await _secureStorage.read(key: 'access_token');
-      print("DEBUG: _secureStorage.read completed, token: $accessToken");
+      debugPrint("DEBUG: _secureStorage.read completed, token: $accessToken");
       
       if (accessToken != null && accessToken.isNotEmpty) {
         if (JwtDecoder.isExpired(accessToken)) {
@@ -83,7 +84,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         }
       }
     } catch (e) {
-      print("DEBUG: _checkAuth caught error: $e");
+      debugPrint("DEBUG: _checkAuth caught error: $e");
       return Unauthenticated();
     }
     return Unauthenticated();

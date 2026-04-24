@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Assuming your entities/models exist somewhere
 // import 'package:mobile/features/auth/domain/repositories/auth_repository.dart';
@@ -10,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Mock generation
 @GenerateMocks([/*AuthRepository, SecureStorageService*/])
-import 'auth_provider_test.mocks.dart'; // Ignore error if not yet generated
+// import 'auth_provider_test.mocks.dart'; // Ignore error if not yet generated
 
 // --- Mock Classes (Manual placeholder for demonstration since we can't run build_runner safely without knowing exact paths) ---
 // Note: In real setup, uncomment above @GenerateMocks and run: flutter pub run build_runner build

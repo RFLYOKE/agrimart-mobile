@@ -151,7 +151,7 @@ class _UploadExportDocScreenState extends State<UploadExportDocScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: _isFileUploaded ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFF1E293B),
+                  color: _isFileUploaded ? const Color(0xFF10B981).withValues(alpha: 0.1) : const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: _isFileUploaded ? const Color(0xFF10B981) : const Color(0xFF334155), style: BorderStyle.solid),
                 ),

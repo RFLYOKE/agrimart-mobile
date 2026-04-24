@@ -154,7 +154,7 @@ class _CreateRfqScreenState extends State<CreateRfqScreen> {
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  margin: const EdgeInsets.bottom(16),
+                  margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF334155))),
                   child: Row(
                     children: [
@@ -185,7 +185,7 @@ class _CreateRfqScreenState extends State<CreateRfqScreen> {
                       val ? _selectedCerts.add(c) : _selectedCerts.remove(c);
                     }),
                     backgroundColor: const Color(0xFF1E293B),
-                    selectedColor: const Color(0xFF3B82F6).withOpacity(0.2),
+                    selectedColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
                     side: BorderSide(color: active ? const Color(0xFF3B82F6) : const Color(0xFF334155)),
                     labelStyle: TextStyle(color: active ? const Color(0xFF3B82F6) : Colors.grey[400]),
                   );

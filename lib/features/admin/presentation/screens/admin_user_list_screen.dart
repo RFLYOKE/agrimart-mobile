@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/providers/admin_provider.dart';
 import '../../data/models/admin_user_model.dart';
 
 /// Admin User List — Daftar semua pengguna dengan search & filter
-class AdminUserListScreen extends StatefulWidget {
+class AdminUserListScreen extends ConsumerStatefulWidget {
   const AdminUserListScreen({super.key});
 
   @override
-  State<AdminUserListScreen> createState() => _AdminUserListScreenState();
+  ConsumerState<AdminUserListScreen> createState() => _AdminUserListScreenState();
 }
 
-class _AdminUserListScreenState extends State<AdminUserListScreen> {
+class _AdminUserListScreenState extends ConsumerState<AdminUserListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedRole = 'all';
-  bool _isLoading = true;
-  List<AdminUserModel> _users = [];
 
   final List<Map<String, String>> _roleFilters = [
     {'key': 'all', 'label': 'Semua'},
@@ -24,52 +24,9 @@ class _AdminUserListScreenState extends State<AdminUserListScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _loadUsers();
-  }
-
-  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadUsers() async {
-    setState(() => _isLoading = true);
-
-    // TODO: Replace with actual API call
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      _users = [
-        AdminUserModel(id: '1', name: 'Budi Santoso', email: 'budi@email.com', phone: '+6281234567890', role: 'konsumen', status: 'active', joinDate: DateTime(2025, 3, 15), transactionCount: 24),
-        AdminUserModel(id: '2', name: 'Koperasi Tani Makmur', email: 'koptani@email.com', role: 'koperasi', status: 'active', joinDate: DateTime(2025, 1, 10), transactionCount: 156),
-        AdminUserModel(id: '3', name: 'Hotel Nusantara', email: 'hotel@nusantara.com', role: 'hotel_restoran', status: 'suspended', joinDate: DateTime(2025, 6, 1), transactionCount: 89),
-        AdminUserModel(id: '4', name: 'PT Agri Export', email: 'export@agri.com', role: 'eksportir', status: 'active', joinDate: DateTime(2025, 2, 20), transactionCount: 45),
-      ];
-      _isLoading = false;
-    });
-  }
-
-  List<AdminUserModel> get _filteredUsers {
-    var filtered = _users;
-
-    // Filter by role
-    if (_selectedRole != 'all') {
-      filtered = filtered.where((u) => u.role == _selectedRole).toList();
-    }
-
-    // Filter by search
-    final query = _searchController.text.toLowerCase();
-    if (query.isNotEmpty) {
-      filtered = filtered.where((u) {
-        return u.name.toLowerCase().contains(query) ||
-            (u.email?.toLowerCase().contains(query) ?? false);
-      }).toList();
-    }
-
-    return filtered;
   }
 
   @override
@@ -129,7 +86,7 @@ class _AdminUserListScreenState extends State<AdminUserListScreen> {
                   selected: isActive,
                   onSelected: (_) => setState(() => _selectedRole = filter['key']!),
                   backgroundColor: const Color(0xFF1E293B),
-                  selectedColor: const Color(0xFF22C55E).withOpacity(0.2),
+                  selectedColor: const Color(0xFF22C55E).withValues(alpha: 0.2),
                   labelStyle: TextStyle(
                     color: isActive ? const Color(0xFF22C55E) : Colors.grey[400],
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
@@ -147,29 +104,41 @@ class _AdminUserListScreenState extends State<AdminUserListScreen> {
 
           // ─── User List ──────────────────────
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E)))
-                : _filteredUsers.isEmpty
-                    ? Center(
-                        child: Text('Tidak ada user ditemukan', style: TextStyle(color: Colors.grey[500])),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _filteredUsers.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          return _UserAdminCard(
-                            user: _filteredUsers[index],
-                            onTap: () {
-                              Navigator.pushNamed(
-                                context,
-                                '/admin/users/detail',
-                                arguments: _filteredUsers[index].id,
-                              );
-                            },
-                          );
-                        },
-                      ),
+            child: ref.watch(adminUsersProvider({
+              'role': _selectedRole == 'all' ? null : _selectedRole,
+              'search': _searchController.text.trim(),
+            })).when(
+              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
+              error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+              data: (data) {
+                final usersList = (data['users'] as List).map((u) => AdminUserModel.fromJson(u)).toList();
+                
+                if (usersList.isEmpty) {
+                  return Center(
+                    child: Text('Tidak ada user ditemukan', style: TextStyle(color: Colors.grey[500])),
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: usersList.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final user = usersList[index];
+                    return _UserAdminCard(
+                      user: user,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/admin/users/detail',
+                          arguments: user.id,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -202,7 +171,7 @@ class _UserAdminCard extends StatelessWidget {
             // Avatar inisial
             CircleAvatar(
               radius: 22,
-              backgroundColor: _roleColor(user.role).withOpacity(0.2),
+              backgroundColor: _roleColor(user.role).withValues(alpha: 0.2),
               child: Text(
                 user.initials,
                 style: TextStyle(
@@ -289,7 +258,7 @@ class _RoleBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(role, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
@@ -313,7 +282,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),

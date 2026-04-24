@@ -163,7 +163,7 @@ class _PriceHomeScreenState extends State<PriceHomeScreen> {
                             dotData: const FlDotData(show: true),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: AppColors.primaryGreen.withOpacity(0.2), // Gradient equivalent
+                              color: AppColors.primaryGreen.withValues(alpha: 0.2), // Gradient equivalent
                             ),
                           ),
                         ],
@@ -226,9 +226,9 @@ class _PriceHomeScreenState extends State<PriceHomeScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [

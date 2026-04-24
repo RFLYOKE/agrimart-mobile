@@ -5,7 +5,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import '../constants/api_constants.dart';
+// import '../constants/api_constants.dart';
 import '../network/dio_client.dart';
 
 class UploadService {
@@ -22,7 +22,7 @@ class UploadService {
     final compressedFile = await _compressImage(file);
 
     // 2. Get pre-signed URL dari backend
-    final fileName = '${folder}/${DateTime.now().millisecondsSinceEpoch}_${p.basename(file.path)}';
+    final fileName = '$folder/${DateTime.now().millisecondsSinceEpoch}_${p.basename(file.path)}';
     final presignedResponse = await _dio.get(
       '/upload/presigned-url',
       queryParameters: {'key': fileName, 'content_type': 'image/jpeg'},

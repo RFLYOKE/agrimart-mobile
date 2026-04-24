@@ -15,10 +15,10 @@ class _CreateSubscriptionScreenState extends State<CreateSubscriptionScreen> {
   // Form State
   Map<String, dynamic>? _selectedProduct;
   String _frequency = 'weekly';
-  int _deliveryDay = 1; // Senin
+  // _deliveryDay is unused
   int _qty = 10;
-  DateTime _startDate = DateTime.now().add(const Duration(days: 3));
-  DateTime _endDate = DateTime.now().add(const Duration(days: 93)); // 3 bulan
+  final DateTime _startDate = DateTime.now().add(const Duration(days: 3));
+  final DateTime _endDate = DateTime.now().add(const Duration(days: 93)); // 3 bulan
 
   final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
@@ -80,7 +80,6 @@ class _CreateSubscriptionScreenState extends State<CreateSubscriptionScreen> {
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.dark(
             primary: Color(0xFF8B5CF6),
-            background: Color(0xFF0F172A),
             surface: Color(0xFF1E293B),
           ),
         ),
@@ -149,7 +148,7 @@ class _CreateSubscriptionScreenState extends State<CreateSubscriptionScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: _selectedProduct != null ? const Color(0xFF8B5CF6).withOpacity(0.1) : const Color(0xFF1E293B),
+                        color: _selectedProduct != null ? const Color(0xFF8B5CF6).withValues(alpha: 0.1) : const Color(0xFF1E293B),
                         border: Border.all(color: _selectedProduct != null ? const Color(0xFF8B5CF6) : const Color(0xFF334155)),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -275,12 +274,12 @@ class _CreateSubscriptionScreenState extends State<CreateSubscriptionScreen> {
               isActive: _currentStep >= 3,
               content: Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.5))),
+                decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.5))),
                 child: Column(
                   children: [
                     _reviewRow('Produk', _selectedProduct?['name'] ?? ''),
                     _reviewRow('Harga Terkunci', _selectedProduct != null ? currencyFormat.format(_selectedProduct!['priceB2B']) : '-'),
-                    _reviewRow('Pengiriman', '$_qty unit (${_frequency})'),
+                    _reviewRow('Pengiriman', '$_qty unit ($_frequency)'),
                     _reviewRow('Periode', '${DateFormat('dd MMM yyyy').format(_startDate)} - ${DateFormat('dd MMM yyyy').format(_endDate)}'),
                     const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(color: Color(0xFF334155))),
                     Row(

@@ -193,7 +193,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                             ),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: const Color(0xFF22C55E).withOpacity(0.1),
+                              color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                             ),
                           ),
                         ],
@@ -367,7 +367,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                         return ListTile(
                           leading: CircleAvatar(
                             radius: 16,
-                            backgroundColor: const Color(0xFF22C55E).withOpacity(0.15),
+                            backgroundColor: const Color(0xFF22C55E).withValues(alpha: 0.15),
                             child: Text(
                               '${i + 1}',
                               style: const TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.bold, fontSize: 13),

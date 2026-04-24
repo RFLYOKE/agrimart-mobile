@@ -57,7 +57,7 @@ class _SubmitQuoteScreenState extends State<SubmitQuoteScreen> {
             // Info Header Readonly
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: const Color(0xFFF59E0B).withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFF59E0B))),
+              decoration: BoxDecoration(color: const Color(0xFFF59E0B).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFF59E0B))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -146,7 +146,7 @@ class _SubmitQuoteScreenState extends State<SubmitQuoteScreen> {
                     val ? _selectedCerts.add(c) : _selectedCerts.remove(c);
                   }),
                   backgroundColor: const Color(0xFF1E293B),
-                  selectedColor: const Color(0xFFF59E0B).withOpacity(0.2),
+                  selectedColor: const Color(0xFFF59E0B).withValues(alpha: 0.2),
                   side: BorderSide(color: active ? const Color(0xFFF59E0B) : const Color(0xFF334155)),
                   labelStyle: TextStyle(color: active ? const Color(0xFFF59E0B) : Colors.grey[400]),
                 );

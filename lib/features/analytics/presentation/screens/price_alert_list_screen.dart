@@ -28,7 +28,7 @@ class PriceAlertListScreen extends StatefulWidget {
 
 class _PriceAlertListScreenState extends State<PriceAlertListScreen> {
   // Mock data; in production, fetch from API
-  List<PriceAlert> _alerts = [
+  final List<PriceAlert> _alerts = [
     PriceAlert(id: '1', commodity: 'Cabai Merah', targetPrice: 45000, status: 'active', createdAt: DateTime.now().subtract(const Duration(days: 2))),
     PriceAlert(id: '2', commodity: 'Udang Vannamei', targetPrice: 85000, status: 'triggered', createdAt: DateTime.now().subtract(const Duration(days: 5))),
     PriceAlert(id: '3', commodity: 'Bawang Putih', targetPrice: 32000, status: 'active', createdAt: DateTime.now().subtract(const Duration(hours: 10))),
@@ -98,7 +98,7 @@ class _PriceAlertListScreenState extends State<PriceAlertListScreen> {
                       leading: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: isActive ? AppColors.primaryGreen.withOpacity(0.1) : Colors.grey[200],
+                          color: isActive ? AppColors.primaryGreen.withValues(alpha: 0.1) : Colors.grey[200],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -119,7 +119,7 @@ class _PriceAlertListScreenState extends State<PriceAlertListScreen> {
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isActive ? AppColors.successGreen.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                          color: isActive ? AppColors.successGreen.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: isActive ? AppColors.successGreen : Colors.orange),
                         ),

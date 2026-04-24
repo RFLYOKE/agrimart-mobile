@@ -10,7 +10,7 @@ class DateFormatter {
   }
 
   static String formatDateTime(DateTime date) {
-    return DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(date) + ' WIB';
+    return '${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(date)} WIB';
   }
 
   static String formatRelative(DateTime date) {

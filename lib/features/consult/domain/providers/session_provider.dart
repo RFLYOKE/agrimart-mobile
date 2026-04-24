@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../auth/domain/providers/auth_provider.dart';
+// import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/models/session_model.dart';
-import '../../data/models/message_model.dart';
+// import '../../data/models/message_model.dart';
 import '../../data/services/consult_socket_service.dart';
 
 class SessionState {

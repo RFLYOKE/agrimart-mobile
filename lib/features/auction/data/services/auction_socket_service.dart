@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../../core/constants/api_constants.dart';
 import 'package:flutter/foundation.dart';
 
@@ -24,7 +24,7 @@ class AuctionSocketService {
   factory AuctionSocketService() => _instance;
   AuctionSocketService._internal();
 
-  IO.Socket? _socket;
+  io.Socket? _socket;
   final _bidController = StreamController<BidUpdate>.broadcast();
   final _outbidController = StreamController<bool>.broadcast();
 
@@ -34,7 +34,7 @@ class AuctionSocketService {
   void connect(String token) {
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
     
-    _socket = IO.io('$baseUrl/auction', <String, dynamic>{
+    _socket = io.io('$baseUrl/auction', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'auth': {'token': token},

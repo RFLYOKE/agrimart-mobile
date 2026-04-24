@@ -25,7 +25,7 @@ class _ConfirmReceiptScreenState extends ConsumerState<ConfirmReceiptScreen> {
   String? _condition; // 'fresh' | 'not_fresh'
   final List<File> _proofPhotos = [];
   bool _isLoading = false;
-  double _uploadProgress = 0;
+  // Removed _uploadProgress unused field
 
   final _picker = ImagePicker();
 

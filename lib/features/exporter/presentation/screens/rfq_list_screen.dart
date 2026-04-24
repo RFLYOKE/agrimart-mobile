@@ -75,7 +75,7 @@ class _RfqListScreenState extends State<RfqListScreen> {
                     selected: active,
                     onSelected: (_) => setState(() => _filter = f),
                     backgroundColor: const Color(0xFF1E293B),
-                    selectedColor: const Color(0xFF3B82F6).withOpacity(0.2),
+                    selectedColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
                     labelStyle: TextStyle(
                       color: active ? const Color(0xFF3B82F6) : Colors.grey[400],
                       fontWeight: active ? FontWeight.bold : FontWeight.normal,
@@ -113,7 +113,7 @@ class _RfqListScreenState extends State<RfqListScreen> {
                             Expanded(child: Text(rfq['title'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: isOpen ? const Color(0xFF10B981).withOpacity(0.15) : const Color(0xFF64748B).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: isOpen ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFF64748B).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                               child: Text(isOpen ? 'OPEN' : 'AWARDED', style: TextStyle(color: isOpen ? const Color(0xFF10B981) : const Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
                           ],

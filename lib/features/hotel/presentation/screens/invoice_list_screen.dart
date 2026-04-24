@@ -80,7 +80,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                   selected: active,
                   onSelected: (_) => setState(() => _selectedFilter = f['key']!),
                   backgroundColor: const Color(0xFF1E293B),
-                  selectedColor: const Color(0xFFF59E0B).withOpacity(0.2),
+                  selectedColor: const Color(0xFFF59E0B).withValues(alpha: 0.2),
                   labelStyle: TextStyle(
                     color: active ? const Color(0xFFF59E0B) : Colors.grey[400],
                     fontWeight: active ? FontWeight.bold : FontWeight.normal,
@@ -119,7 +119,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                             Text(inv['id'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: statusColor.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                               child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ],

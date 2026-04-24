@@ -63,8 +63,11 @@ class _ExportDocumentsScreenState extends State<ExportDocumentsScreen> {
           final daysLeft = doc['daysUntilExpiry'] as int;
           
           Color borderColor = const Color(0xFF334155);
-          if (daysLeft < 0) borderColor = const Color(0xFFEF4444); // Expired
-          else if (daysLeft <= 30) borderColor = const Color(0xFFF59E0B); // Warning
+          if (daysLeft < 0) {
+            borderColor = const Color(0xFFEF4444); // Expired
+          } else if (daysLeft <= 30) {
+            borderColor = const Color(0xFFF59E0B); // Warning
+          }
           
           return Container(
             padding: const EdgeInsets.all(16),

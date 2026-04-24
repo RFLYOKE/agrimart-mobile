@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
+// import 'package:integration_test/integration_test.dart';
 import 'package:dio/dio.dart';
 // import 'package:mobile/main.dart' as app;
 // import 'package:mobile/core/network/dio_client.dart';
@@ -69,7 +69,7 @@ class MockApiInterceptor extends Interceptor {
 // ------------------------------------------------
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Marketplace Flow E2E: Login -> Browse -> Add to Cart -> Checkout', (WidgetTester tester) async {
     // NOTE: Uncomment when running in actual project

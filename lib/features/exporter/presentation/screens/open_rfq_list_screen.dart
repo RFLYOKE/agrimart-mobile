@@ -64,7 +64,7 @@ class _OpenRfqListScreenState extends State<OpenRfqListScreen> {
                     selected: active,
                     onSelected: (_) => setState(() => _categoryFilter = f),
                     backgroundColor: const Color(0xFF1E293B),
-                    selectedColor: const Color(0xFFF59E0B).withOpacity(0.2),
+                    selectedColor: const Color(0xFFF59E0B).withValues(alpha: 0.2),
                     labelStyle: TextStyle(
                       color: active ? const Color(0xFFF59E0B) : Colors.grey[400],
                       fontWeight: active ? FontWeight.bold : FontWeight.normal,
@@ -87,7 +87,7 @@ class _OpenRfqListScreenState extends State<OpenRfqListScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E293B),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.5)),
+                    border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.5)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

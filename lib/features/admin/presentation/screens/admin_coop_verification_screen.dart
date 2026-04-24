@@ -1,80 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/providers/admin_provider.dart';
+import 'package:intl/intl.dart';
 
 /// Admin Cooperative Verification Screen
 /// List koperasi pending verifikasi — Approve/Reject dengan animasi
-class AdminCoopVerificationScreen extends StatefulWidget {
+class AdminCoopVerificationScreen extends ConsumerWidget {
   const AdminCoopVerificationScreen({super.key});
 
-  @override
-  State<AdminCoopVerificationScreen> createState() => _AdminCoopVerificationScreenState();
-}
-
-class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScreen> {
-  bool _isLoading = true;
-  List<Map<String, dynamic>> _coops = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPendingCoops();
+  void _handleApprove(BuildContext context, WidgetRef ref, Map<String, dynamic> coop) async {
+    try {
+      await ref.read(adminActionsProvider).verifyCooperative(coop['id'], 'approve');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ ${coop['name']} berhasil diverifikasi!'),
+            backgroundColor: const Color(0xFF22C55E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
-  Future<void> _loadPendingCoops() async {
-    setState(() => _isLoading = true);
-
-    // TODO: Replace with GET /admin/cooperatives/pending
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      _coops = [
-        {
-          'id': 'coop_1',
-          'name': 'Koperasi Sumber Rejeki',
-          'sector': 'Perikanan',
-          'location': 'Banyuwangi, Jawa Timur',
-          'description': 'Koperasi nelayan dengan 120 anggota aktif.',
-          'userName': 'Ahmad Fauzi',
-          'userEmail': 'fauzi@email.com',
-          'userPhone': '+6282345678901',
-          'joinDate': '2026-04-10',
-          'documents': [
-            {'type': 'Sertifikat BPOM', 'url': 'https://example.com/doc1.pdf'},
-            {'type': 'Akta Pendirian', 'url': 'https://example.com/doc2.pdf'},
-          ],
-        },
-        {
-          'id': 'coop_2',
-          'name': 'Koperasi Agro Mandiri',
-          'sector': 'Pertanian',
-          'location': 'Malang, Jawa Timur',
-          'description': 'Koperasi pertanian organik.',
-          'userName': 'Siti Rahayu',
-          'userEmail': 'siti@email.com',
-          'userPhone': '+6283456789012',
-          'joinDate': '2026-04-12',
-          'documents': [
-            {'type': 'Sertifikat Organik', 'url': 'https://example.com/doc3.pdf'},
-          ],
-        },
-      ];
-      _isLoading = false;
-    });
-  }
-
-  void _handleApprove(int index) {
-    final coop = _coops[index];
-    // TODO: Call PUT /admin/cooperatives/verify { coop_id, action: 'approve' }
-    setState(() => _coops.removeAt(index));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ ${coop['name']} berhasil diverifikasi!'),
-        backgroundColor: const Color(0xFF22C55E),
-      ),
-    );
-  }
-
-  void _handleReject(int index) {
-    final coop = _coops[index];
+  void _handleReject(BuildContext context, WidgetRef ref, Map<String, dynamic> coop) {
     final reasonController = TextEditingController();
 
     showDialog(
@@ -112,7 +66,7 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
             child: Text('Batal', style: TextStyle(color: Colors.grey[400])),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (reasonController.text.length < 10) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Alasan minimal 10 karakter'), backgroundColor: Colors.orange),
@@ -120,14 +74,28 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
                 return;
               }
               Navigator.pop(ctx);
-              // TODO: Call PUT /admin/cooperatives/verify { coop_id, action: 'reject', reason }
-              setState(() => _coops.removeAt(index));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('❌ ${coop['name']} ditolak.'),
-                  backgroundColor: const Color(0xFFEF4444),
-                ),
-              );
+              
+              try {
+                await ref.read(adminActionsProvider).verifyCooperative(
+                  coop['id'], 
+                  'reject',
+                  reason: reasonController.text.trim(),
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('❌ ${coop['name']} ditolak.'),
+                      backgroundColor: const Color(0xFFEF4444),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
@@ -141,7 +109,10 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final coopsAsync = ref.watch(adminPendingCoopsProvider);
+
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
@@ -150,27 +121,30 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E)))
-          : _coops.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[600]),
-                      const SizedBox(height: 16),
-                      Text('Tidak ada koperasi pending', style: TextStyle(color: Colors.grey[400], fontSize: 16)),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadPendingCoops,
-                  color: const Color(0xFF22C55E),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _coops.length,
-                    itemBuilder: (context, index) {
-                      final coop = _coops[index];
+      body: coopsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
+        error: (error, stack) => Center(child: Text('Error: $error', style: const TextStyle(color: Colors.red))),
+        data: (coops) => coops.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[600]),
+                    const SizedBox(height: 16),
+                    Text('Tidak ada koperasi pending', style: TextStyle(color: Colors.grey[400], fontSize: 16)),
+                  ],
+                ),
+              )
+            : RefreshIndicator(
+                onRefresh: () => ref.refresh(adminPendingCoopsProvider.future),
+                color: const Color(0xFF22C55E),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: coops.length,
+                  itemBuilder: (context, index) {
+                    final coop = coops[index];
+                    final user = coop['user'] as Map<String, dynamic>? ?? {};
+                    final documents = coop['documents'] as List<dynamic>? ?? [];
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.only(bottom: 14),
@@ -189,7 +163,7 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF59E0B).withOpacity(0.15),
+                                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(Icons.business, color: Color(0xFFF59E0B), size: 24),
@@ -221,20 +195,20 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
                               ),
                               child: Column(
                                 children: [
-                                  _infoRow(Icons.person_outline, coop['userName']),
-                                  _infoRow(Icons.email_outlined, coop['userEmail']),
-                                  _infoRow(Icons.phone_outlined, coop['userPhone']),
-                                  _infoRow(Icons.calendar_today, 'Bergabung: ${coop['joinDate']}'),
+                                  if (user['name'] != null) _infoRow(Icons.person_outline, user['name']),
+                                  if (user['email'] != null) _infoRow(Icons.email_outlined, user['email']),
+                                  if (user['phone'] != null) _infoRow(Icons.phone_outlined, user['phone']),
+                                  if (user['created_at'] != null) _infoRow(Icons.calendar_today, 'Bergabung: ${DateFormat('dd MMM yyyy').format(DateTime.parse(user['created_at']))}'),
                                 ],
                               ),
                             ),
 
                             // Documents
-                            if ((coop['documents'] as List).isNotEmpty) ...[
+                            if (documents.isNotEmpty) ...[
                               const SizedBox(height: 12),
                               Text('Dokumen:', style: TextStyle(color: Colors.grey[400], fontSize: 12, fontWeight: FontWeight.w600)),
                               const SizedBox(height: 6),
-                              ...(coop['documents'] as List).map((doc) => Padding(
+                              ...documents.map((doc) => Padding(
                                     padding: const EdgeInsets.only(bottom: 4),
                                     child: Row(
                                       children: [
@@ -253,7 +227,7 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
                               children: [
                                 Expanded(
                                   child: OutlinedButton.icon(
-                                    onPressed: () => _handleReject(index),
+                                    onPressed: () => _handleReject(context, ref, coop),
                                     icon: const Icon(Icons.close, size: 18),
                                     label: const Text('Tolak'),
                                     style: OutlinedButton.styleFrom(
@@ -267,7 +241,7 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: ElevatedButton.icon(
-                                    onPressed: () => _handleApprove(index),
+                                    onPressed: () => _handleApprove(context, ref, coop),
                                     icon: const Icon(Icons.check, size: 18),
                                     label: const Text('Approve'),
                                     style: ElevatedButton.styleFrom(
@@ -286,6 +260,7 @@ class _AdminCoopVerificationScreenState extends State<AdminCoopVerificationScree
                     },
                   ),
                 ),
+      ),
     );
   }
 
