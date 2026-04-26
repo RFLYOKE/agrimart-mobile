@@ -6,7 +6,7 @@ import '../../data/models/admin_stats_model.dart';
 // --- Repositories ---
 
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {
-  final dioClient = ref.watch(dioClientProvider);
+  final dioClient = DioClient.instance;
   return AdminRepository(dioClient);
 });
 

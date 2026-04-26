@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/upload_service.dart';
+import '../../domain/providers/fresh_guarantee_provider.dart';
 
 class ConfirmReceiptScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -66,12 +67,12 @@ class _ConfirmReceiptScreenState extends ConsumerState<ConfirmReceiptScreen> {
         if (mounted) UploadService.hideUploadProgress(context);
       }
 
-      // TODO: Panggil API confirm receipt
-      // await ref.read(freshGuaranteeRepositoryProvider).confirmReceipt(
-      //   orderId: widget.orderId, condition: _condition!, photoUrls: photoUrls
-      // );
-
-      await Future.delayed(const Duration(seconds: 1)); // Mock
+      final freshRepo = ref.read(freshGuaranteeRepositoryProvider);
+      await freshRepo.confirmReceipt(
+        orderId: widget.orderId,
+        condition: _condition!,
+        photoUrls: photoUrls,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

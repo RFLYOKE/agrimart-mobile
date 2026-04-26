@@ -1,61 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/providers/admin_provider.dart';
+import '../../data/models/admin_stats_model.dart';
 
 /// Admin Dashboard — Home Screen
 /// Menampilkan MetricCards overview dan navigasi ke sub-fitur admin.
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
-}
-
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  bool _isLoading = true;
-
-  // Placeholder stats data — replace with actual API call via provider
-  Map<String, dynamic> _stats = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStats();
-  }
-
-  Future<void> _loadStats() async {
-    setState(() => _isLoading = true);
-
-    // TODO: Replace with actual API call
-    // final response = await ref.read(adminServiceProvider).getStats();
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _stats = {
-        'totalUsers': 1250,
-        'usersBreakdown': {
-          'konsumen': 800,
-          'koperasi': 250,
-          'hotel_restoran': 120,
-          'eksportir': 75,
-          'admin': 5,
-        },
-        'revenueToday': 45670000,
-        'pendingClaims': 3,
-        'pendingCoops': 7,
-        'activeAuctions': 12,
-        'transactionsMonth': 3420,
-      };
-      _isLoading = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currencyFormat = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
     );
+    
+    final statsAsync = ref.watch(adminStatsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A), // Slate 900
@@ -68,170 +30,167 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
-              // TODO: Navigate to admin notifications
+              Navigator.pushNamed(context, '/notifications');
             },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadStats,
+        onRefresh: () => ref.refresh(adminStatsProvider.future),
         color: const Color(0xFF22C55E),
-        child:
-            _isLoading
-                ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF22C55E)),
-                )
-                : SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: statsAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: Color(0xFF22C55E)),
+          ),
+          error: (err, stack) => Center(
+            child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+          ),
+          data: (AdminStatsModel stats) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ─── Header ──────────────────────
+                  const Text(
+                    'Platform Overview',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat(
+                      'EEEE, dd MMMM yyyy',
+                      'id_ID',
+                    ).format(DateTime.now()),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ─── Metric Cards Grid ──────────────────────
+                  GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: 1.4,
                     children: [
-                      // ─── Header ──────────────────────
-                      const Text(
-                        'Platform Overview',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      _MetricCard(
+                        icon: Icons.people_alt_rounded,
+                        iconColor: const Color(0xFF60A5FA),
+                        title: 'Total Pengguna',
+                        value: NumberFormat('#,###').format(stats.users.total),
+                        subtitle: _buildUserBreakdown(stats.users.breakdown),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat(
-                          'EEEE, dd MMMM yyyy',
-                          'id_ID',
-                        ).format(DateTime.now()),
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      _MetricCard(
+                        icon: Icons.monetization_on_rounded,
+                        iconColor: const Color(0xFF34D399),
+                        title: 'Revenue Hari Ini',
+                        value: currencyFormat.format(stats.transactions.today.total),
+                        subtitle: null,
                       ),
-                      const SizedBox(height: 20),
-
-                      // ─── Metric Cards Grid ──────────────────────
-                      GridView.count(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        childAspectRatio: 1.4,
-                        children: [
-                          _MetricCard(
-                            icon: Icons.people_alt_rounded,
-                            iconColor: const Color(0xFF60A5FA),
-                            title: 'Total Pengguna',
-                            value: NumberFormat(
-                              '#,###',
-                            ).format(_stats['totalUsers']),
-                            subtitle: _buildUserBreakdown(),
-                          ),
-                          _MetricCard(
-                            icon: Icons.monetization_on_rounded,
-                            iconColor: const Color(0xFF34D399),
-                            title: 'Revenue Hari Ini',
-                            value: currencyFormat.format(
-                              _stats['revenueToday'],
-                            ),
-                            subtitle: null,
-                          ),
-                          _MetricCard(
-                            icon: Icons.report_problem_rounded,
-                            iconColor: const Color(0xFFF87171),
-                            title: 'Klaim Pending',
-                            value: '${_stats['pendingClaims']}',
-                            badgeCount: _stats['pendingClaims'],
-                            badgeColor: Colors.red,
-                            subtitle: null,
-                          ),
-                          _MetricCard(
-                            icon: Icons.verified_rounded,
-                            iconColor: const Color(0xFFFBBF24),
-                            title: 'Koperasi Pending',
-                            value: '${_stats['pendingCoops']}',
-                            badgeCount: _stats['pendingCoops'],
-                            badgeColor: Colors.orange,
-                            subtitle: null,
-                          ),
-                          _MetricCard(
-                            icon: Icons.gavel_rounded,
-                            iconColor: const Color(0xFFC084FC),
-                            title: 'Auction Aktif',
-                            value: '${_stats['activeAuctions']}',
-                            subtitle: null,
-                          ),
-                          _MetricCard(
-                            icon: Icons.receipt_long_rounded,
-                            iconColor: const Color(0xFF38BDF8),
-                            title: 'Transaksi Bulan Ini',
-                            value: NumberFormat(
-                              '#,###',
-                            ).format(_stats['transactionsMonth']),
-                            subtitle: null,
-                          ),
-                        ],
+                      _MetricCard(
+                        icon: Icons.report_problem_rounded,
+                        iconColor: const Color(0xFFF87171),
+                        title: 'Klaim Pending',
+                        value: '${stats.pendingClaims}',
+                        badgeCount: stats.pendingClaims,
+                        badgeColor: Colors.red,
+                        subtitle: null,
                       ),
-
-                      const SizedBox(height: 28),
-
-                      // ─── Quick Navigation ──────────────────────
-                      const Text(
-                        'Kelola Platform',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      _MetricCard(
+                        icon: Icons.verified_rounded,
+                        iconColor: const Color(0xFFFBBF24),
+                        title: 'Koperasi Pending',
+                        value: '${stats.cooperatives.pending}',
+                        badgeCount: stats.cooperatives.pending,
+                        badgeColor: Colors.orange,
+                        subtitle: null,
                       ),
-                      const SizedBox(height: 12),
-
-                      _NavButton(
-                        icon: Icons.people_outline,
-                        label: 'Kelola Pengguna',
-                        color: const Color(0xFF3B82F6),
-                        onTap: () {
-                          Navigator.pushNamed(context, '/admin/users');
-                        },
+                      _MetricCard(
+                        icon: Icons.gavel_rounded,
+                        iconColor: const Color(0xFFC084FC),
+                        title: 'Auction Aktif',
+                        value: '${stats.activeAuctions}',
+                        subtitle: null,
                       ),
-                      const SizedBox(height: 10),
-                      _NavButton(
-                        icon: Icons.business_center_outlined,
-                        label: 'Verifikasi Koperasi',
-                        color: const Color(0xFFF59E0B),
-                        badgeCount: _stats['pendingCoops'],
-                        onTap: () {
-                          Navigator.pushNamed(context, '/admin/cooperatives');
-                        },
+                      _MetricCard(
+                        icon: Icons.receipt_long_rounded,
+                        iconColor: const Color(0xFF38BDF8),
+                        title: 'Transaksi Bulan Ini',
+                        value: NumberFormat('#,###').format(stats.transactions.thisMonth.count),
+                        subtitle: null,
                       ),
-                      const SizedBox(height: 10),
-                      _NavButton(
-                        icon: Icons.shield_outlined,
-                        label: 'Kelola Klaim',
-                        color: const Color(0xFFEF4444),
-                        badgeCount: _stats['pendingClaims'],
-                        onTap: () {
-                          Navigator.pushNamed(context, '/admin/claims');
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      _NavButton(
-                        icon: Icons.analytics_outlined,
-                        label: 'Analytics',
-                        color: const Color(0xFF8B5CF6),
-                        onTap: () {
-                          Navigator.pushNamed(context, '/admin/analytics');
-                        },
-                      ),
-                      const SizedBox(height: 32),
                     ],
                   ),
-                ),
+
+                  const SizedBox(height: 28),
+
+                  // ─── Quick Navigation ──────────────────────
+                  const Text(
+                    'Kelola Platform',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  _NavButton(
+                    icon: Icons.people_outline,
+                    label: 'Kelola Pengguna',
+                    color: const Color(0xFF3B82F6),
+                    onTap: () {
+                      Navigator.pushNamed(context, '/admin/users');
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _NavButton(
+                    icon: Icons.business_center_outlined,
+                    label: 'Verifikasi Koperasi',
+                    color: const Color(0xFFF59E0B),
+                    badgeCount: stats.cooperatives.pending,
+                    onTap: () {
+                      Navigator.pushNamed(context, '/admin/cooperatives');
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _NavButton(
+                    icon: Icons.shield_outlined,
+                    label: 'Kelola Klaim',
+                    color: const Color(0xFFEF4444),
+                    badgeCount: stats.pendingClaims,
+                    onTap: () {
+                      Navigator.pushNamed(context, '/admin/claims');
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _NavButton(
+                    icon: Icons.analytics_outlined,
+                    label: 'Analytics',
+                    color: const Color(0xFF8B5CF6),
+                    onTap: () {
+                      Navigator.pushNamed(context, '/admin/analytics');
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  String _buildUserBreakdown() {
-    final b = _stats['usersBreakdown'] as Map<String, dynamic>?;
-    if (b == null) return '';
-    return 'K:${b['konsumen']} | Kop:${b['koperasi']} | H:${b['hotel_restoran']} | E:${b['eksportir']}';
+  String _buildUserBreakdown(Map<String, int> b) {
+    return 'K:${b['consumer'] ?? b['konsumen'] ?? 0} | Kop:${b['cooperative'] ?? b['koperasi'] ?? 0} | H:${b['hotel_resto'] ?? b['hotel'] ?? 0} | E:${b['exporter'] ?? b['eksportir'] ?? 0}';
   }
 }
 

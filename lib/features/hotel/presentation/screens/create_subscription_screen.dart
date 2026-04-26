@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/providers/hotel_provider.dart';
+
 /// Screen untuk membuat kontrak langganan baru (4 step wizard)
-class CreateSubscriptionScreen extends StatefulWidget {
+class CreateSubscriptionScreen extends ConsumerStatefulWidget {
   const CreateSubscriptionScreen({super.key});
 
   @override
-  State<CreateSubscriptionScreen> createState() => _CreateSubscriptionScreenState();
+  ConsumerState<CreateSubscriptionScreen> createState() => _CreateSubscriptionScreenState();
 }
 
-class _CreateSubscriptionScreenState extends State<CreateSubscriptionScreen> {
+class _CreateSubscriptionScreenState extends ConsumerState<CreateSubscriptionScreen> {
   int _currentStep = 0;
+  bool _isSubmitting = false;
 
   // Form State
   Map<String, dynamic>? _selectedProduct;
@@ -31,39 +35,60 @@ class _CreateSubscriptionScreenState extends State<CreateSubscriptionScreen> {
     return (_selectedProduct!['priceB2B'] * _qty * deliveriesPerMonth).toDouble();
   }
 
-  void _submit() {
-    // TODO: POST /hotel/subscriptions
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 64),
-        content: const Text(
-          'Kontrak Langganan Berhasil Dibuat!\n\nOrder otomatis akan di-generate sesuai jadwal pengiriman Anda.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.pop(ctx);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5CF6),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Selesai', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+  Future<void> _submit() async {
+    setState(() { _isSubmitting = true; });
+
+    try {
+      await ref.read(hotelRepositoryProvider).createSubscription(
+        coopId: 'c1', // Dummy coop ID, in real app get from _selectedProduct
+        productId: _selectedProduct!['id'],
+        qtyPerDelivery: _qty,
+        frequency: _frequency,
+        deliveryDay: 1, // Dummy delivery day (1 = Monday)
+        startDate: _startDate,
+        endDate: _endDate,
+      );
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 64),
+            content: const Text(
+              'Kontrak Langganan Berhasil Dibuat!\n\nOrder otomatis akan di-generate sesuai jadwal pengiriman Anda.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 16),
             ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(ctx);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Selesai', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) setState(() { _isSubmitting = false; });
+    }
   }
 
   @override
@@ -106,13 +131,15 @@ class _CreateSubscriptionScreenState extends State<CreateSubscriptionScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: details.onStepContinue,
+                      onPressed: _isSubmitting ? null : details.onStepContinue,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8B5CF6),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: Text(_currentStep == 3 ? 'Buat Kontrak' : 'Lanjut', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: _isSubmitting 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text(_currentStep == 3 ? 'Buat Kontrak' : 'Lanjut', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   if (_currentStep > 0) const SizedBox(width: 12),

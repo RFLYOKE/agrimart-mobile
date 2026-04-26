@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/upload_service.dart';
+import '../../domain/providers/fresh_guarantee_provider.dart';
 
 class ClaimFormScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -76,9 +77,14 @@ class _ClaimFormScreenState extends ConsumerState<ClaimFormScreen> {
 
       setState(() { _isUploading = false; _isSubmitting = true; });
 
-      // TODO: Panggil API create claim
-      // await claimRepo.createClaim(orderId: widget.orderId, issueType: _issueType!, ...)
-      await Future.delayed(const Duration(seconds: 1));
+      final claimRepo = ref.read(freshGuaranteeRepositoryProvider);
+      await claimRepo.createClaim(
+        orderId: widget.orderId,
+        issueType: _issueType!,
+        description: _descController.text.trim(),
+        photoUrls: photoUrls,
+        refundType: _refundType,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Klaim berhasil diajukan!'), backgroundColor: AppColors.successGreen));

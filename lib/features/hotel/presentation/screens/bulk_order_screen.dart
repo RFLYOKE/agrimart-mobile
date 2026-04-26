@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/providers/hotel_provider.dart';
+
 /// Form Order Massal / B2B dengan harga khusus
-class BulkOrderScreen extends StatefulWidget {
+class BulkOrderScreen extends ConsumerStatefulWidget {
   const BulkOrderScreen({super.key});
 
   @override
-  State<BulkOrderScreen> createState() => _BulkOrderScreenState();
+  ConsumerState<BulkOrderScreen> createState() => _BulkOrderScreenState();
 }
 
-class _BulkOrderScreenState extends State<BulkOrderScreen> {
+class _BulkOrderScreenState extends ConsumerState<BulkOrderScreen> {
   final _searchController = TextEditingController();
   final _noteController = TextEditingController();
   DateTime? _deliveryDate;
+  bool _isSubmitting = false;
   
   // Dummy selected items
   final List<Map<String, dynamic>> _selectedItems = [
@@ -123,7 +127,7 @@ class _BulkOrderScreenState extends State<BulkOrderScreen> {
     }
   }
 
-  void _submitOrder() {
+  Future<void> _submitOrder() async {
     if (_selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tambahkan minimal 1 produk'), backgroundColor: Colors.red));
       return;
@@ -133,38 +137,69 @@ class _BulkOrderScreenState extends State<BulkOrderScreen> {
       return;
     }
 
-    // TODO: Call API POST /hotel/bulk-orders
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 64),
-        content: const Text(
-          'Order Massal berhasil dikonfirmasi!\n\nEstimasi pengiriman sedang diproses oleh Koperasi.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx); // Close dialog
-                Navigator.pop(ctx); // Go back
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF22C55E),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Selesai', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+    setState(() { _isSubmitting = true; });
+    try {
+      final items = _selectedItems.map((item) => {
+        'product_id': item['id'],
+        'qty': item['qty'],
+      }).toList();
+
+      final dummyAddress = {
+        'street': 'Jl. Dummy 123',
+        'city': 'Jakarta',
+        'province': 'DKI Jakarta',
+        'postal_code': '12345',
+        'recipient_name': 'Hotel Mulia',
+        'recipient_phone': '08123456789',
+      };
+
+      await ref.read(hotelRepositoryProvider).createBulkOrder(
+        items: items,
+        deliveryDate: _deliveryDate!,
+        deliveryAddress: dummyAddress,
+        note: _noteController.text.trim(),
+      );
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 64),
+            content: const Text(
+              'Order Massal berhasil dikonfirmasi!\n\nEstimasi pengiriman sedang diproses oleh Koperasi.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 16),
             ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx); // Close dialog
+                    Navigator.pop(ctx); // Go back
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF22C55E),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Selesai', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) setState(() { _isSubmitting = false; });
+    }
   }
 
   @override
@@ -365,13 +400,15 @@ class _BulkOrderScreenState extends State<BulkOrderScreen> {
                 const SizedBox(width: 24),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _submitOrder,
+                    onPressed: _isSubmitting ? null : _submitOrder,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF22C55E),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Konfirmasi', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: _isSubmitting 
+                        ? const CircularProgressIndicator(color: Colors.white) 
+                        : const Text('Konfirmasi', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

@@ -270,6 +270,7 @@ class _ClaimCard extends StatelessWidget {
                       placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                       errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey),
                     ),
+                  ),
                 ),
               ),
             ),
